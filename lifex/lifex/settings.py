@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'drf_spectacular',
+    'blockchain',
 ]
 
 MIDDLEWARE = [
@@ -107,6 +108,13 @@ USE_I18N = True
 
 USE_TZ = True
 
+# Blockchain Config
+BLOCKCHAIN_CONFIG = {
+    'GANACHE_URL': 'http://127.0.0.1:7545',
+    'CONTRACT_ADDRESS': None,  # Will be updated after deployment
+    'CHAIN_ID': 1337,  # Ganache default
+}
+
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
@@ -155,3 +163,6 @@ SPECTACULAR_SETTINGS = {
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
 }
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
