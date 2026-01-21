@@ -8,40 +8,10 @@ User = get_user_model()
 class PatientRegistrationSerializer(serializers.ModelSerializer):
     """Serializer for IT Staff to register new patients"""
     password = serializers.CharField(write_only=True, required=True)
-    temporary_id = serializers.FileField(required=False, allow_null=True)
     
     class Meta:
         model = User
-        fields = (
-            'email', 'password', 'first_name', 'last_name',
-            'date_of_birth', 'gender', 'phone_number',
-            'address_line1', 'address_line2', 'city', 
-            'state_province', 'postal_code', 'country',
-            'emergency_contact_name', 'emergency_contact_phone', 
-            'emergency_contact_relationship',
-            'temporary_id'
-        )
-        extra_kwargs = {
-            'first_name': {'required': True},
-            'last_name': {'required': True},
-            'date_of_birth': {'required': False},
-            'phone_number': {'required': False},
-        }
-    
-    def validate_temporary_id(self, value):
-        """Validate temporary ID file"""
-        if value:
-            # Check file size (max 5MB)
-            if value.size > 5 * 1024 * 1024:
-                raise serializers.ValidationError("File size cannot exceed 5MB")
-            
-            # Check file type
-            allowed_types = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf']
-            if value.content_type not in allowed_types:
-                raise serializers.ValidationError(
-                    "Only JPG, PNG, and PDF files are allowed"
-                )
-        return value
+        fields = ('email', 'password', 'first_name', 'last_name')
     
     def create(self, validated_data):
         """Create patient with PENDING status"""
@@ -59,21 +29,19 @@ class PatientListSerializer(serializers.ModelSerializer):
     """Serializer for listing patients"""
     full_name = serializers.SerializerMethodField()
     records_count = serializers.SerializerMethodField()
-    age = serializers.SerializerMethodField()
-    full_address = serializers.SerializerMethodField()
-    temporary_id_url = serializers.SerializerMethodField()
     
     class Meta:
         model = User
         fields = (
-            'id', 'email', 'first_name', 'last_name', 'full_name',
-            'date_of_birth', 'age', 'gender', 'phone_number',
-            'address_line1', 'address_line2', 'city', 
-            'state_province', 'postal_code', 'country', 'full_address',
-            'emergency_contact_name', 'emergency_contact_phone', 
-            'emergency_contact_relationship',
-            'temporary_id_url', 'account_status', 'kyc_status', 
-            'date_joined', 'records_count'
+            'id',
+            'email',
+            'first_name',
+            'last_name',
+            'full_name',
+            'account_status',
+            'kyc_status',
+            'date_joined',
+            'records_count'
         )
     
     def get_full_name(self, obj):
@@ -81,18 +49,6 @@ class PatientListSerializer(serializers.ModelSerializer):
     
     def get_records_count(self, obj):
         return obj.medical_records.count()
-    
-    def get_age(self, obj):
-        return obj.get_age()
-    
-    def get_full_address(self, obj):
-        return obj.get_full_address()
-    
-    def get_temporary_id_url(self, obj):
-        request = self.context.get('request')
-        if obj.temporary_id and request:
-            return request.build_absolute_uri(obj.temporary_id.url)
-        return None
 
 
 class MedicalRecordUploadSerializer(serializers.ModelSerializer):

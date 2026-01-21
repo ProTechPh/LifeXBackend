@@ -37,10 +37,10 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         return attrs
     
     def validate_role(self, value):
-        """Validate role - users can't register as ADMIN or STAFF"""
-        if value and value in ['ADMIN', 'STAFF']:
+        """Validate role - users can't register as ADMIN or IT_STAFF"""
+        if value and value in ['ADMIN', 'IT_STAFF']:
             raise serializers.ValidationError(
-                "You cannot register with ADMIN or STAFF role."
+                "You cannot register with ADMIN or IT_STAFF role."
             )
         return value
     
@@ -49,9 +49,13 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         validated_data.pop('password2')
         password = validated_data.pop('password')
         
-        # Ensure regular users get USER role
-        if 'role' not in validated_data or validated_data['role'] not in ['USER']:
-            validated_data['role'] = 'USER'
+        # Ensure regular users get PATIENT role and PENDING status
+        if 'role' not in validated_data:
+            validated_data['role'] = 'PATIENT'
+        
+        # Set account_status to PENDING for patients (requires approval)
+        if validated_data.get('role') == 'PATIENT':
+            validated_data['account_status'] = 'PENDING'
         
         user = User.objects.create_user(
             password=password,
@@ -73,17 +77,30 @@ class UserLoginSerializer(serializers.Serializer):
 class UserSerializer(serializers.ModelSerializer):
     """Serializer for user details"""
     full_name = serializers.SerializerMethodField()
+    age = serializers.SerializerMethodField()
     
     class Meta:
         model = User
         fields = (
             'id', 'email', 'first_name', 'last_name', 'full_name',
-            'role', 'kyc_status', 'is_active', 'date_joined', 'last_login'
+            'role', 'account_status', 'kyc_status', 'is_active',
+            'date_of_birth', 'age', 'gender', 'phone_number',
+            'address_line1', 'address_line2', 'city', 'state_province',
+            'postal_code', 'country',
+            'emergency_contact_name', 'emergency_contact_phone', 
+            'emergency_contact_relationship',
+            'date_joined', 'last_login'
         )
-        read_only_fields = ('id', 'role', 'kyc_status', 'date_joined', 'last_login')
+        read_only_fields = (
+            'id', 'role', 'account_status', 'kyc_status', 
+            'is_active', 'date_joined', 'last_login'
+        )
     
     def get_full_name(self, obj):
         return obj.get_full_name()
+    
+    def get_age(self, obj):
+        return obj.get_age()
 
 
 class UserUpdateSerializer(serializers.ModelSerializer):
@@ -91,12 +108,18 @@ class UserUpdateSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = User
-        fields = ('first_name', 'last_name')
+        fields = (
+            'first_name', 'last_name', 'date_of_birth', 'gender', 
+            'phone_number', 'address_line1', 'address_line2', 
+            'city', 'state_province', 'postal_code', 'country',
+            'emergency_contact_name', 'emergency_contact_phone',
+            'emergency_contact_relationship'
+        )
     
     def update(self, instance, validated_data):
         """Update user instance"""
-        instance.first_name = validated_data.get('first_name', instance.first_name)
-        instance.last_name = validated_data.get('last_name', instance.last_name)
+        for field, value in validated_data.items():
+            setattr(instance, field, value)
         instance.save()
         return instance
 
@@ -133,4 +156,49 @@ class ChangePasswordSerializer(serializers.Serializer):
         user = self.context['request'].user
         if not user.check_password(value):
             raise serializers.ValidationError("Old password is incorrect.")
+        return value
+
+
+class UserAdminSerializer(serializers.ModelSerializer):
+    """Serializer for admin user management - includes sensitive fields"""
+    full_name = serializers.SerializerMethodField()
+    age = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = User
+        fields = (
+            'id', 'email', 'first_name', 'last_name', 'full_name',
+            'role', 'account_status', 'kyc_status', 
+            'is_active', 'is_staff', 'is_superuser',
+            'date_of_birth', 'age', 'gender', 'phone_number',
+            'address_line1', 'address_line2', 'city', 'state_province',
+            'postal_code', 'country',
+            'emergency_contact_name', 'emergency_contact_phone', 
+            'emergency_contact_relationship',
+            'temporary_id',
+            'date_joined', 'last_login'
+        )
+        read_only_fields = ('id', 'date_joined', 'last_login')
+    
+    def get_full_name(self, obj):
+        return obj.get_full_name()
+    
+    def get_age(self, obj):
+        return obj.get_age()
+
+
+class AccountStatusUpdateSerializer(serializers.ModelSerializer):
+    """Serializer for updating account status (Admin only)"""
+    
+    class Meta:
+        model = User
+        fields = ('account_status',)
+    
+    def validate_account_status(self, value):
+        """Validate account status"""
+        valid_statuses = ['PENDING', 'APPROVED', 'REJECTED', 'SUSPENDED']
+        if value not in valid_statuses:
+            raise serializers.ValidationError(
+                f"Invalid status. Must be one of: {', '.join(valid_statuses)}"
+            )
         return value

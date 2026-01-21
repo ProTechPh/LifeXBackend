@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LifeX Medical Records System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 60px 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+        
+        h1 {
+            color: #333;
+            font-size: 36px;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #666;
+            font-size: 18px;
+            margin-bottom: 40px;
+        }
+        
+        .portal-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        
+        .portal-btn {
+            display: flex;
+            align-items: center;
+            padding: 25px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 12px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .portal-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+        }
+        
+        .portal-btn .icon {
+            font-size: 40px;
+            margin-right: 20px;
+        }
+        
+        .portal-btn .text {
+            text-align: left;
+        }
+        
+        .portal-btn .title {
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .portal-btn .desc {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .features {
+            text-align: left;
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+        }
+        
+        .features h3 {
+            color: #333;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .features ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .features li {
+            padding: 8px 0;
+            color: #666;
+        }
+        
+        .features li:before {
+            content: "✓ ";
+            color: #667eea;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        
+        .api-link {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .api-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏥 LifeX Medical Records</h1>
+        <p class="subtitle">Blockchain-Secured Healthcare Data Management</p>
+        
+        <div class="portal-buttons">
+            <a href="/staff/" class="portal-btn">
+                <div class="icon">👨‍💼</div>
+                <div class="text">
+                    <div class="title">IT Staff Portal</div>
+                    <div class="desc">Register patients & upload medical records</div>
+                </div>
+            </a>
+            
+            <a href="/patient/" class="portal-btn">
+                <div class="icon">🏥</div>
+                <div class="text">
+                    <div class="title">Patient Portal</div>
+                    <div class="desc">View your medical records & verify on blockchain</div>
+                </div>
+            </a>
+        </div>
+        
+        <div class="features">
+            <h3>System Features</h3>
+            <ul>
+                <li>Blockchain-verified medical records</li>
+                <li>Secure role-based access control</li>
+                <li>Document integrity verification</li>
+                <li>Immutable audit trail</li>
+                <li>Real-time blockchain confirmation</li>
+            </ul>
+        </div>
+        
+        <p style="color: #666; margin-top: 20px;">
+            <a href="/api/schema/swagger-ui/" class="api-link">API Documentation</a> | 
+            <a href="/admin/" class="api-link">Admin Panel</a>
+        </p>
+    </div>
+</body>
+</html>

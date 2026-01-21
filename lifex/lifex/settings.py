@@ -51,7 +51,7 @@ ROOT_URLCONF = 'lifex.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -72,8 +72,12 @@ WSGI_APPLICATION = 'lifex.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'lifex_db',
+        'USER': 'postgres',  # or 'lifex_user' if you created one
+        'PASSWORD': 'bulagsihans123',  # Your password here
+        'HOST': 'localhost',
+        'PORT': '5432',
     }
 }
 

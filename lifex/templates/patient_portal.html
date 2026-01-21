@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Portal - Medical Records</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 30px;
+        }
+        
+        header {
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            color: #333;
+            font-size: 28px;
+        }
+        
+        .user-info {
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .status-banner {
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: 600;
+        }
+        
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .status-approved {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .search-box {
+            margin-bottom: 20px;
+        }
+        
+        .search-box input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        .search-box input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .record-card {
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: all 0.3s;
+        }
+        
+        .record-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+        }
+        
+        .record-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 15px;
+        }
+        
+        .record-title h3 {
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .record-type {
+            padding: 5px 12px;
+            background: #667eea;
+            color: white;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .record-details {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .record-details p {
+            margin-bottom: 8px;
+        }
+        
+        .record-actions {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5568d3;
+        }
+        
+        .blockchain-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 12px;
+            background: #d4edda;
+            color: #155724;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .blockchain-badge.unverified {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+        
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏥 Patient Portal</h1>
+            <p class="user-info">Welcome, <span id="patientName">Loading...</span></p>
+            <p class="user-info">Email: <span id="patientEmail">Loading...</span> | <a href="/login/" style="color: #667eea;">Logout</a></p>
+        </header>
+
+        <div id="statusBanner"></div>
+
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="🔍 Search your medical records...">
+        </div>
+
+        <div id="recordsList">
+            <p class="loading">Loading your medical records...</p>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://127.0.0.1:8000/api';
+        let authToken = '';
+        let allRecords = [];
+
+        // Initialize
+        window.addEventListener('DOMContentLoaded', () => {
+            // Get token from sessionStorage
+            authToken = sessionStorage.getItem('access_token');
+            
+            if (!authToken) {
+                // No token - redirect to login
+                alert('Please login to access the Patient Portal');
+                window.location.href = '/login/';
+                return;
+            }
+            
+            loadPatientInfo();
+            loadMedicalRecords();
+            
+            document.getElementById('searchInput').addEventListener('input', searchRecords);
+        });
+
+        // Load patient info
+        async function loadPatientInfo() {
+            try {
+                const response = await fetch(`${API_BASE}/auth/profile/`, {
+                    headers: {'Authorization': `Bearer ${authToken}`}
+                });
+                const data = await response.json();
+                
+                document.getElementById('patientName').textContent = data.full_name || 'Patient';
+                document.getElementById('patientEmail').textContent = data.email;
+                
+                // Show status banner
+                const banner = document.getElementById('statusBanner');
+                if (data.account_status === 'PENDING') {
+                    banner.className = 'status-banner status-pending';
+                    banner.textContent = '⏳ Your account is pending approval by an administrator';
+                } else if (data.account_status === 'APPROVED') {
+                    banner.className = 'status-banner status-approved';
+                    banner.textContent = '✅ Your account is approved and active';
+                }
+            } catch (error) {
+                console.error('Failed to load profile', error);
+            }
+        }
+
+        // Load medical records
+        async function loadMedicalRecords() {
+            try {
+                const response = await fetch(`${API_BASE}/blockchain/patient/my-records/`, {
+                    headers: {'Authorization': `Bearer ${authToken}`}
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to load records');
+                }
+                
+                allRecords = await response.json();
+                displayRecords(allRecords);
+            } catch (error) {
+                document.getElementById('recordsList').innerHTML = `
+                    <div class="empty-state">
+                        <p>❌ Failed to load medical records</p>
+                        <p style="font-size: 14px; margin-top: 10px;">${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Display records
+        function displayRecords(records) {
+            const container = document.getElementById('recordsList');
+            
+            if (records.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <h3>No Medical Records Yet</h3>
+                        <p>Your medical records will appear here once uploaded by medical staff.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = records.map(record => `
+                <div class="record-card">
+                    <div class="record-header">
+                        <div class="record-title">
+                            <h3>${record.title}</h3>
+                            <span class="blockchain-badge ${record.is_verified ? '' : 'unverified'}">
+                                ${record.is_verified ? '✓' : '⏳'} ${record.is_verified ? 'Verified on Blockchain' : 'Pending Verification'}
+                            </span>
+                        </div>
+                        <span class="record-type">${formatRecordType(record.record_type)}</span>
+                    </div>
+                    
+                    <div class="record-details">
+                        ${record.description ? `<p><strong>Details:</strong> ${record.description}</p>` : ''}
+                        <p><strong>📅 Date of Service:</strong> ${new Date(record.date_of_service).toLocaleDateString()}</p>
+                        ${record.department ? `<p><strong>🏥 Department:</strong> ${record.department}</p>` : ''}
+                        <p><strong>👨‍⚕️ Uploaded by:</strong> ${record.uploaded_by_name}</p>
+                        <p><strong>📄 File Type:</strong> ${record.file_extension} (${record.file_size_mb})</p>
+                        <p><strong>🔗 Blockchain TX:</strong> <code>${record.short_tx_hash}</code></p>
+                        <p><strong>📦 Block:</strong> #${record.block_number}</p>
+                    </div>
+                    
+                    <div class="record-actions">
+                        <button class="btn btn-primary" onclick="window.open('${record.file_url}', '_blank')">
+                            📥 Download Record
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Format record type
+        function formatRecordType(type) {
+            return type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        }
+
+        // Search records
+        function searchRecords() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = allRecords.filter(record => 
+                record.title.toLowerCase().includes(searchTerm) ||
+                record.description.toLowerCase().includes(searchTerm) ||
+                record.record_type.toLowerCase().includes(searchTerm) ||
+                (record.department && record.department.toLowerCase().includes(searchTerm))
+            );
+            displayRecords(filtered);
+        }
+    </script>
+</body>
+</html>

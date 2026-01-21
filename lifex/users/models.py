@@ -36,8 +36,15 @@ class User(AbstractBaseUser, PermissionsMixin):
     
     ROLE_CHOICES = (
         ('ADMIN', 'Administrator'),
-        ('STAFF', 'Staff Member'),
-        ('USER', 'Regular User'),
+        ('IT_STAFF', 'IT Medical Staff'),
+        ('PATIENT', 'Patient'),
+    )
+    
+    ACCOUNT_STATUS_CHOICES = (
+        ('PENDING', 'Pending Approval'),
+        ('APPROVED', 'Approved'),
+        ('REJECTED', 'Rejected'),
+        ('SUSPENDED', 'Suspended'),
     )
     
     KYC_STATUS_CHOICES = (
@@ -52,8 +59,50 @@ class User(AbstractBaseUser, PermissionsMixin):
     first_name = models.CharField(max_length=150, blank=True)
     last_name = models.CharField(max_length=150, blank=True)
     
+    # Demographic Information
+    date_of_birth = models.DateField(null=True, blank=True)
+    gender = models.CharField(
+        max_length=20,
+        choices=[
+            ('MALE', 'Male'),
+            ('FEMALE', 'Female'),
+            ('OTHER', 'Other'),
+            ('PREFER_NOT_TO_SAY', 'Prefer not to say')
+        ],
+        blank=True
+    )
+    phone_number = models.CharField(max_length=20, blank=True)
+    
+    # Address Information
+    address_line1 = models.CharField(max_length=255, blank=True)
+    address_line2 = models.CharField(max_length=255, blank=True)
+    city = models.CharField(max_length=100, blank=True)
+    state_province = models.CharField(max_length=100, blank=True)
+    postal_code = models.CharField(max_length=20, blank=True)
+    country = models.CharField(max_length=100, blank=True, default='Philippines')
+    
+    # Emergency Contact
+    emergency_contact_name = models.CharField(max_length=255, blank=True)
+    emergency_contact_phone = models.CharField(max_length=20, blank=True)
+    emergency_contact_relationship = models.CharField(max_length=100, blank=True)
+    
+    # Temporary ID Upload (for verification before KYC)
+    temporary_id = models.FileField(
+        upload_to='temporary_ids/%Y/%m/%d/',
+        blank=True,
+        null=True,
+        help_text='Temporary ID document for initial verification'
+    )
+    
     # Role and permissions
-    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='USER')
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='PATIENT')
+    
+    # Account status (for patients requiring approval)
+    account_status = models.CharField(
+        max_length=15,
+        choices=ACCOUNT_STATUS_CHOICES,
+        default='PENDING'
+    )
     
     # KYC status (for future implementation)
     kyc_status = models.CharField(
@@ -92,17 +141,44 @@ class User(AbstractBaseUser, PermissionsMixin):
         """Return the short name for the user"""
         return self.first_name or self.email
     
+    def get_age(self):
+        """Calculate age from date of birth"""
+        if not self.date_of_birth:
+            return None
+        from datetime import date
+        today = date.today()
+        return today.year - self.date_of_birth.year - (
+            (today.month, today.day) < (self.date_of_birth.month, self.date_of_birth.day)
+        )
+    
+    def get_full_address(self):
+        """Return formatted full address"""
+        parts = [
+            self.address_line1,
+            self.address_line2,
+            self.city,
+            self.state_province,
+            self.postal_code,
+            self.country
+        ]
+        return ', '.join([p for p in parts if p])
+    
     @property
     def is_admin(self):
         """Check if user is admin"""
         return self.role == 'ADMIN'
     
     @property
-    def is_staff_member(self):
-        """Check if user is staff"""
-        return self.role == 'STAFF'
+    def is_it_staff(self):
+        """Check if user is IT staff"""
+        return self.role == 'IT_STAFF'
     
     @property
-    def is_regular_user(self):
-        """Check if user is regular user"""
-        return self.role == 'USER'
+    def is_patient(self):
+        """Check if user is patient"""
+        return self.role == 'PATIENT'
+    
+    @property
+    def is_approved(self):
+        """Check if patient account is approved"""
+        return self.account_status == 'APPROVED'

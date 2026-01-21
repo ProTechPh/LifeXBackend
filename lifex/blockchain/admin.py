@@ -1,5 +1,62 @@
 from django.contrib import admin
-from .models import BlockchainDocument, BlockchainTransaction
+from .models import BlockchainDocument, BlockchainTransaction, MedicalRecord
+
+
+@admin.register(MedicalRecord)
+class MedicalRecordAdmin(admin.ModelAdmin):
+    """Admin interface for MedicalRecord"""
+    
+    list_display = (
+        'id',
+        'patient',
+        'record_type',
+        'title',
+        'date_of_service',
+        'uploaded_by',
+        'status',
+        'is_verified',
+        'created_at'
+    )
+    
+    list_filter = ('record_type', 'status', 'is_verified', 'date_of_service', 'created_at')
+    search_fields = ('patient__email', 'patient__first_name', 'patient__last_name', 'title', 'document_id')
+    readonly_fields = (
+        'document_id',
+        'document_hash',
+        'blockchain_address',
+        'transaction_hash',
+        'block_number',
+        'file_size',
+        'created_at',
+        'updated_at',
+        'registered_on_blockchain_at'
+    )
+    
+    fieldsets = (
+        ('Patient Information', {
+            'fields': ('patient', 'uploaded_by')
+        }),
+        ('Record Details', {
+            'fields': ('record_type', 'title', 'description', 'department', 'date_of_service')
+        }),
+        ('File Information', {
+            'fields': ('document_file', 'file_size')
+        }),
+        ('Blockchain Data', {
+            'fields': (
+                'document_id',
+                'document_hash',
+                'blockchain_address',
+                'transaction_hash',
+                'block_number',
+                'status',
+                'is_verified'
+            )
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at', 'registered_on_blockchain_at')
+        }),
+    )
 
 
 @admin.register(BlockchainDocument)

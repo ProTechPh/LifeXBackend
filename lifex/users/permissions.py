@@ -12,25 +12,26 @@ class IsAdmin(permissions.BasePermission):
         )
 
 
-class IsStaff(permissions.BasePermission):
-    """Permission class for Staff users only"""
+class IsITStaff(permissions.BasePermission):
+    """Permission class for IT Staff only"""
     
     def has_permission(self, request, view):
         return (
             request.user and 
             request.user.is_authenticated and 
-            request.user.role in ['STAFF', 'ADMIN']
+            request.user.role in ['IT_STAFF', 'ADMIN']
         )
 
 
-class IsRegularUser(permissions.BasePermission):
-    """Permission class for Regular users only"""
+class IsPatient(permissions.BasePermission):
+    """Permission class for approved patients only"""
     
     def has_permission(self, request, view):
         return (
             request.user and 
             request.user.is_authenticated and 
-            request.user.role == 'USER'
+            request.user.role == 'PATIENT' and
+            request.user.account_status == 'APPROVED'
         )
 
 

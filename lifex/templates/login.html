@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - LifeX Medical Records</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .login-container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 400px;
+            width: 100%;
+        }
+        
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .logo h1 {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 5px;
+        }
+        
+        .logo p {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border 0.3s;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .alert {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .alert.show {
+            display: block;
+        }
+        
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .alert-warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .quick-login {
+            display: none; /* Removed for production */
+        }
+        
+        .quick-btn {
+            display: none; /* Removed for production */
+        }
+        
+        .back-link {
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .back-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        
+        .back-link a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo">
+            <h1>🏥 LifeX Medical Records</h1>
+            <p>Secure Healthcare Portal</p>
+        </div>
+        
+        <div id="alert" class="alert"></div>
+        
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" placeholder="your.email@hospital.com" required autofocus>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" placeholder="Enter your password" required>
+            </div>
+            
+            <button type="submit" class="btn" id="loginBtn">Login</button>
+        </form>
+        
+        <div class="back-link" style="display: none;">
+            <!-- Removed - login is now the home page -->
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://127.0.0.1:8000/api';
+
+        // Show alert
+        function showAlert(message, type = 'error') {
+            const alert = document.getElementById('alert');
+            alert.className = `alert alert-${type} show`;
+            alert.textContent = message;
+            setTimeout(() => alert.classList.remove('show'), 5000);
+        }
+
+        // Handle login
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const btn = document.getElementById('loginBtn');
+            btn.disabled = true;
+            btn.textContent = 'Logging in...';
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                const response = await fetch(`${API_BASE}/auth/login/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Save token to sessionStorage
+                    sessionStorage.setItem('access_token', data.tokens.access);
+                    sessionStorage.setItem('refresh_token', data.tokens.refresh);
+                    sessionStorage.setItem('user_email', data.user.email);
+                    sessionStorage.setItem('user_role', data.user.role);
+                    
+                    showAlert('Login successful! Redirecting...', 'success');
+                    
+                    // Auto-redirect based on user's role from API response
+                    const userRole = data.user.role;
+                    
+                    setTimeout(() => {
+                        if (userRole === 'IT_STAFF') {
+                            window.location.href = '/staff/';
+                        } else if (userRole === 'PATIENT') {
+                            // Check if patient is approved
+                            if (data.user.account_status === 'APPROVED') {
+                                window.location.href = '/patient/';
+                            } else if (data.user.account_status === 'PENDING') {
+                                alert('⏳ Your account is pending approval.\n\nAn administrator will review your registration soon. You will be able to access the system once approved.');
+                                btn.disabled = false;
+                                btn.textContent = 'Login';
+                                // Clear the form but keep showing the page
+                                return;
+                            } else if (data.user.account_status === 'REJECTED') {
+                                alert('❌ Your account registration was rejected.\n\nPlease contact hospital administration for more information.');
+                                btn.disabled = false;
+                                btn.textContent = 'Login';
+                                return;
+                            } else {
+                                alert('⚠️ Your account status is: ' + data.user.account_status + '\n\nPlease contact support.');
+                                btn.disabled = false;
+                                btn.textContent = 'Login';
+                                return;
+                            }
+                        } else if (userRole === 'ADMIN') {
+                            window.location.href = '/dashboard/';
+                        } else {
+                            alert('⚠️ Unknown user role: ' + userRole + '\n\nPlease contact support.');
+                            btn.disabled = false;
+                            btn.textContent = 'Login';
+                        }
+                    }, 1000);
+                } else {
+                    showAlert(data.error || 'Invalid credentials');
+                    btn.disabled = false;
+                    btn.textContent = 'Login';
+                }
+            } catch (error) {
+                showAlert('Network error. Please try again.');
+                btn.disabled = false;
+                btn.textContent = 'Login';
+            }
+        });
+    </script>
+</body>
+</html>

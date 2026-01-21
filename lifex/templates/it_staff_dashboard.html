@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IT Staff Dashboard - Medical Records System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 30px;
+        }
+        
+        header {
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            color: #333;
+            font-size: 28px;
+        }
+        
+        .user-info {
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .tab {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            color: #666;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+        
+        .tab:hover {
+            color: #667eea;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border 0.3s;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        .btn {
+            padding: 12px 30px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .btn:hover {
+            background: #5568d3;
+        }
+        
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .file-upload {
+            border: 2px dashed #667eea;
+            border-radius: 6px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .file-upload:hover {
+            background: #f0f0ff;
+        }
+        
+        .file-upload input[type="file"] {
+            display: none;
+        }
+        
+        .file-info {
+            margin-top: 10px;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .patients-list {
+            margin-top: 20px;
+        }
+        
+        .patient-card {
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .patient-info h3 {
+            margin-bottom: 5px;
+            color: #333;
+        }
+        
+        .patient-info p {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .status-badge {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .status-approved {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-rejected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏥 IT Staff Dashboard</h1>
+            <p class="user-info">Logged in as: <span id="staffEmail">Loading...</span></p>
+            <p class="user-info">Role: IT Medical Staff | <a href="/login/" style="color: #667eea;">Logout</a></p>
+        </header>
+
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('register')">Register Patient</button>
+            <button class="tab" onclick="showTab('upload')">Upload Medical Record</button>
+            <button class="tab" onclick="showTab('patients')">View Patients</button>
+        </div>
+
+        <div id="alerts"></div>
+
+        <!-- Register Patient Tab -->
+        <div id="register-tab" class="tab-content active">
+            <h2>Register New Patient</h2>
+            <form id="registerForm">
+                <h3 style="margin: 20px 0 10px 0; color: #667eea;">Personal Information</h3>
+                <div class="form-group">
+                    <label for="firstName">First Name*</label>
+                    <input type="text" id="firstName" required>
+                </div>
+                <div class="form-group">
+                    <label for="lastName">Last Name*</label>
+                    <input type="text" id="lastName" required>
+                </div>
+                <div class="form-group">
+                    <label for="patientEmail">Email*</label>
+                    <input type="email" id="patientEmail" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Temporary Password*</label>
+                    <input type="password" id="password" required>
+                </div>
+                
+                <h3 style="margin: 20px 0 10px 0; color: #667eea;">Demographic Information</h3>
+                <div class="form-group">
+                    <label for="dateOfBirth">Date of Birth</label>
+                    <input type="date" id="dateOfBirth">
+                </div>
+                <div class="form-group">
+                    <label for="gender">Gender</label>
+                    <select id="gender">
+                        <option value="">-- Select Gender --</option>
+                        <option value="MALE">Male</option>
+                        <option value="FEMALE">Female</option>
+                        <option value="OTHER">Other</option>
+                        <option value="PREFER_NOT_TO_SAY">Prefer not to say</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="phoneNumber">Phone Number</label>
+                    <input type="tel" id="phoneNumber" placeholder="+63 XXX XXX XXXX">
+                </div>
+                
+                <h3 style="margin: 20px 0 10px 0; color: #667eea;">Address Information</h3>
+                <div class="form-group">
+                    <label for="addressLine1">Address Line 1</label>
+                    <input type="text" id="addressLine1" placeholder="Street address">
+                </div>
+                <div class="form-group">
+                    <label for="addressLine2">Address Line 2</label>
+                    <input type="text" id="addressLine2" placeholder="Apartment, suite, etc. (optional)">
+                </div>
+                <div class="form-group">
+                    <label for="city">City</label>
+                    <input type="text" id="city">
+                </div>
+                <div class="form-group">
+                    <label for="stateProvince">State/Province</label>
+                    <input type="text" id="stateProvince">
+                </div>
+                <div class="form-group">
+                    <label for="postalCode">Postal Code</label>
+                    <input type="text" id="postalCode">
+                </div>
+                <div class="form-group">
+                    <label for="country">Country</label>
+                    <input type="text" id="country" value="Philippines">
+                </div>
+                
+                <h3 style="margin: 20px 0 10px 0; color: #667eea;">Emergency Contact</h3>
+                <div class="form-group">
+                    <label for="emergencyName">Emergency Contact Name</label>
+                    <input type="text" id="emergencyName">
+                </div>
+                <div class="form-group">
+                    <label for="emergencyPhone">Emergency Contact Phone</label>
+                    <input type="tel" id="emergencyPhone">
+                </div>
+                <div class="form-group">
+                    <label for="emergencyRelationship">Relationship</label>
+                    <input type="text" id="emergencyRelationship" placeholder="e.g., Spouse, Parent, Sibling">
+                </div>
+                
+                <h3 style="margin: 20px 0 10px 0; color: #667eea;">Temporary ID Upload</h3>
+                <div class="form-group">
+                    <label>Upload ID Document (JPG, PNG, or PDF - Max 5MB)</label>
+                    <div class="file-upload" onclick="document.getElementById('tempIdInput').click()">
+                        <p>📄 Click to upload temporary ID</p>
+                        <p class="file-info" id="tempIdInfo">No file selected</p>
+                    </div>
+                    <input type="file" id="tempIdInput" accept=".jpg,.jpeg,.png,.pdf" style="display: none;">
+                </div>
+                
+                <button type="submit" class="btn" id="registerBtn">Register Patient</button>
+            </form>
+        </div>
+
+        <!-- Upload Medical Record Tab -->
+        <div id="upload-tab" class="tab-content">
+            <h2>Upload Medical Record</h2>
+            <form id="uploadForm">
+                <div class="form-group">
+                    <label for="patientSelect">Select Patient*</label>
+                    <select id="patientSelect" required>
+                        <option value="">-- Loading patients --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="recordType">Record Type*</label>
+                    <select id="recordType" required>
+                        <option value="LAB_RESULT">Laboratory Result</option>
+                        <option value="XRAY">X-Ray Report</option>
+                        <option value="CT_SCAN">CT Scan</option>
+                        <option value="MRI">MRI Scan</option>
+                        <option value="PRESCRIPTION">Prescription</option>
+                        <option value="CONSULTATION">Consultation Notes</option>
+                        <option value="DIAGNOSIS">Diagnosis Report</option>
+                        <option value="VACCINATION">Vaccination Record</option>
+                        <option value="OTHER">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="title">Title*</label>
+                    <input type="text" id="title" placeholder="e.g., Blood Test Results" required>
+                </div>
+                <div class="form-group">
+                    <label for="description">Description</label>
+                    <textarea id="description" placeholder="Additional details about this record"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="department">Department</label>
+                    <input type="text" id="department" placeholder="e.g., Radiology, Laboratory">
+                </div>
+                <div class="form-group">
+                    <label for="dateOfService">Date of Service*</label>
+                    <input type="date" id="dateOfService" required>
+                </div>
+                <div class="form-group">
+                    <label>Upload Document* (PDF, Image, Word, Excel - Max 25MB)</label>
+                    <div class="file-upload" onclick="document.getElementById('fileInput').click()">
+                        <p>📁 Click to select file</p>
+                        <p class="file-info" id="fileInfo">No file selected</p>
+                    </div>
+                    <input type="file" id="fileInput" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx">
+                </div>
+                <button type="submit" class="btn" id="uploadBtn">Upload & Register on Blockchain</button>
+            </form>
+        </div>
+
+        <!-- View Patients Tab -->
+        <div id="patients-tab" class="tab-content">
+            <h2>All Patients</h2>
+            <div class="form-group">
+                <input type="text" id="searchPatient" placeholder="🔍 Search by name or email...">
+            </div>
+            <div class="form-group">
+                <label for="statusFilter">Filter by Status</label>
+                <select id="statusFilter" onchange="loadPatients()">
+                    <option value="">All Patients</option>
+                    <option value="PENDING">Pending</option>
+                    <option value="APPROVED">Approved</option>
+                    <option value="REJECTED">Rejected</option>
+                </select>
+            </div>
+            <div id="patientsList" class="patients-list">
+                <p class="loading">Loading patients...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const API_BASE = 'http://127.0.0.1:8000/api';
+        let authToken = '';
+
+        // Show alert message
+        function showAlert(message, type = 'success') {
+            const alertsDiv = document.getElementById('alerts');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            alertsDiv.appendChild(alert);
+            setTimeout(() => alert.remove(), 5000);
+        }
+
+        // Tab switching
+        function showTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+            
+            if (tabName === 'patients') loadPatients();
+            if (tabName === 'upload') loadApprovedPatients();
+        }
+
+        // Initialize
+        window.addEventListener('DOMContentLoaded', () => {
+            // Get token from sessionStorage
+            authToken = sessionStorage.getItem('access_token');
+            
+            if (!authToken) {
+                // No token - redirect to login
+                alert('Please login to access the IT Staff Dashboard');
+                window.location.href = '/login/';
+                return;
+            }
+            
+            loadStaffInfo();
+            loadApprovedPatients();
+            setupEventListeners();
+        });
+
+        // Load staff info
+        async function loadStaffInfo() {
+            try {
+                const response = await fetch(`${API_BASE}/auth/profile/`, {
+                    headers: {'Authorization': `Bearer ${authToken}`}
+                });
+                const data = await response.json();
+                document.getElementById('staffEmail').textContent = data.email;
+            } catch (error) {
+                showAlert('Failed to load profile', 'error');
+            }
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            document.getElementById('registerForm').addEventListener('submit', registerPatient);
+            document.getElementById('uploadForm').addEventListener('submit', uploadRecord);
+            document.getElementById('fileInput').addEventListener('change', handleFileSelect);
+            document.getElementById('tempIdInput').addEventListener('change', handleTempIdSelect);
+            document.getElementById('searchPatient').addEventListener('input', searchPatients);
+        }
+        
+        // Handle temp ID file selection
+        function handleTempIdSelect(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+                document.getElementById('tempIdInfo').textContent = `Selected: ${file.name} (${sizeMB}MB)`;
+            }
+        }
+
+        // Handle file selection
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+                document.getElementById('fileInfo').textContent = `Selected: ${file.name} (${sizeMB}MB)`;
+            }
+        }
+
+        // Register patient
+        async function registerPatient(e) {
+            e.preventDefault();
+            const btn = document.getElementById('registerBtn');
+            btn.disabled = true;
+            btn.textContent = 'Registering...';
+
+            const formData = new FormData();
+            formData.append('email', document.getElementById('patientEmail').value);
+            formData.append('password', document.getElementById('password').value);
+            formData.append('first_name', document.getElementById('firstName').value);
+            formData.append('last_name', document.getElementById('lastName').value);
+            
+            // Demographic info
+            const dob = document.getElementById('dateOfBirth').value;
+            if (dob) formData.append('date_of_birth', dob);
+            
+            const gender = document.getElementById('gender').value;
+            if (gender) formData.append('gender', gender);
+            
+            const phone = document.getElementById('phoneNumber').value;
+            if (phone) formData.append('phone_number', phone);
+            
+            // Address info
+            const addr1 = document.getElementById('addressLine1').value;
+            if (addr1) formData.append('address_line1', addr1);
+            
+            const addr2 = document.getElementById('addressLine2').value;
+            if (addr2) formData.append('address_line2', addr2);
+            
+            const city = document.getElementById('city').value;
+            if (city) formData.append('city', city);
+            
+            const state = document.getElementById('stateProvince').value;
+            if (state) formData.append('state_province', state);
+            
+            const postal = document.getElementById('postalCode').value;
+            if (postal) formData.append('postal_code', postal);
+            
+            const country = document.getElementById('country').value;
+            if (country) formData.append('country', country);
+            
+            // Emergency contact
+            const emName = document.getElementById('emergencyName').value;
+            if (emName) formData.append('emergency_contact_name', emName);
+            
+            const emPhone = document.getElementById('emergencyPhone').value;
+            if (emPhone) formData.append('emergency_contact_phone', emPhone);
+            
+            const emRel = document.getElementById('emergencyRelationship').value;
+            if (emRel) formData.append('emergency_contact_relationship', emRel);
+            
+            // Temporary ID file
+            const tempIdFile = document.getElementById('tempIdInput').files[0];
+            if (tempIdFile) {
+                formData.append('temporary_id', tempIdFile);
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/blockchain/staff/register-patient/`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: formData
+                });
+
+                const result = await response.json();
+                if (response.ok) {
+                    showAlert('Patient registered successfully! Pending admin approval.');
+                    document.getElementById('registerForm').reset();
+                    document.getElementById('tempIdInfo').textContent = 'No file selected';
+                } else {
+                    const errorMsg = typeof result === 'object' ? JSON.stringify(result) : result.error || 'Registration failed';
+                    showAlert(errorMsg, 'error');
+                }
+            } catch (error) {
+                showAlert('Network error', 'error');
+            }
+
+            btn.disabled = false;
+            btn.textContent = 'Register Patient';
+        }
+
+        // Upload medical record
+        async function uploadRecord(e) {
+            e.preventDefault();
+            const btn = document.getElementById('uploadBtn');
+            btn.disabled = true;
+            btn.textContent = 'Uploading to Blockchain...';
+
+            const fileInput = document.getElementById('fileInput');
+            if (!fileInput.files[0]) {
+                showAlert('Please select a file', 'error');
+                btn.disabled = false;
+                btn.textContent = 'Upload & Register on Blockchain';
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('patient_email', document.getElementById('patientSelect').value);
+            formData.append('record_type', document.getElementById('recordType').value);
+            formData.append('title', document.getElementById('title').value);
+            formData.append('description', document.getElementById('description').value);
+            formData.append('department', document.getElementById('department').value);
+            formData.append('date_of_service', document.getElementById('dateOfService').value);
+            formData.append('document_file', fileInput.files[0]);
+
+            try {
+                const response = await fetch(`${API_BASE}/blockchain/staff/upload-record/`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: formData
+                });
+
+                const result = await response.json();
+                if (response.ok) {
+                    showAlert(`✅ Record uploaded and registered on blockchain! TX: ${result.blockchain_data.transaction_hash.substring(0,10)}...`);
+                    document.getElementById('uploadForm').reset();
+                    document.getElementById('fileInfo').textContent = 'No file selected';
+                } else {
+                    showAlert(result.error || 'Upload failed', 'error');
+                }
+            } catch (error) {
+                showAlert('Network error: ' + error.message, 'error');
+            }
+
+            btn.disabled = false;
+            btn.textContent = 'Upload & Register on Blockchain';
+        }
+
+        // Load approved patients for dropdown
+        async function loadApprovedPatients() {
+            try {
+                const response = await fetch(`${API_BASE}/blockchain/staff/patients/?status=APPROVED`, {
+                    headers: {'Authorization': `Bearer ${authToken}`}
+                });
+                const patients = await response.json();
+                
+                const select = document.getElementById('patientSelect');
+                select.innerHTML = '<option value="">-- Select Patient --</option>';
+                patients.forEach(p => {
+                    const option = document.createElement('option');
+                    option.value = p.email;
+                    option.textContent = `${p.full_name || p.email} (${p.email})`;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Failed to load patients', error);
+            }
+        }
+
+        // Load all patients
+        async function loadPatients() {
+            const status = document.getElementById('statusFilter').value;
+            const url = status ? `${API_BASE}/blockchain/staff/patients/?status=${status}` : `${API_BASE}/blockchain/staff/patients/`;
+            
+            try {
+                const response = await fetch(url, {
+                    headers: {'Authorization': `Bearer ${authToken}`}
+                });
+                const patients = await response.json();
+                displayPatients(patients);
+            } catch (error) {
+                showAlert('Failed to load patients', 'error');
+            }
+        }
+
+        // Display patients
+        function displayPatients(patients) {
+            const container = document.getElementById('patientsList');
+            if (patients.length === 0) {
+                container.innerHTML = '<p class="loading">No patients found</p>';
+                return;
+            }
+
+            container.innerHTML = patients.map(p => `
+                <div class="patient-card">
+                    <div class="patient-info">
+                        <h3>${p.full_name || 'No name'}</h3>
+                        <p>📧 ${p.email}</p>
+                        ${p.age ? `<p>👤 Age: ${p.age} years</p>` : ''}
+                        ${p.gender ? `<p>⚧ Gender: ${p.gender.replace(/_/g, ' ')}</p>` : ''}
+                        ${p.phone_number ? `<p>📱 ${p.phone_number}</p>` : ''}
+                        ${p.full_address ? `<p>📍 ${p.full_address}</p>` : ''}
+                        ${p.emergency_contact_name ? `<p>🚨 Emergency: ${p.emergency_contact_name} (${p.emergency_contact_phone})</p>` : ''}
+                        <p>📅 Joined: ${new Date(p.date_joined).toLocaleDateString()}</p>
+                        <p>📄 Medical Records: ${p.records_count}</p>
+                        ${p.temporary_id_url ? `<p><a href="${p.temporary_id_url}" target="_blank" style="color: #667eea;">📎 View Temporary ID</a></p>` : ''}
+                    </div>
+                    <span class="status-badge status-${p.account_status.toLowerCase()}">${p.account_status}</span>
+                </div>
+            `).join('');
+        }
+
+        // Search patients
+        function searchPatients() {
+            const searchTerm = document.getElementById('searchPatient').value.toLowerCase();
+            const cards = document.querySelectorAll('.patient-card');
+            cards.forEach(card => {
+                const text = card.textContent.toLowerCase();
+                card.style.display = text.includes(searchTerm) ? 'flex' : 'none';
+            });
+        }
+    </script>
+</body>
+</html>
