@@ -1,0 +1,42 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Database (Grounded rule: never commit your local DB)
+db.sqlite3
+db.sqlite3-journal
+
+# Django specific
+local_settings.py
+staticfiles/
+media/
+
+# Log files
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+
+# Blockchain / Truffle specific
+blockchain_project/node_modules/
+blockchain_project/build/
+blockchain_project/.ganache/
+blockchain_project/.ganache-db/
+*.ldb
+
+# Coverage reports
+.coverage_contracts/
+.solcover.json
