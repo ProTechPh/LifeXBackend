@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from datetime import timedelta
 from decouple import config
@@ -73,11 +74,11 @@ WSGI_APPLICATION = 'lifex.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'lifex_db',
-        'USER': 'postgres',  # or 'lifex_user' if you created one
-        'PASSWORD': 'bulagsihans123',  # Your password here
-        'HOST': 'localhost',
-        'PORT': '5432',
+        'NAME': os.getenv('DB_NAME'),
+        'USER': os.getenv('DB_USER'),
+        'PASSWORD': os.getenv('DB_PASSWORD'),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': os.getenv('DB_PORT'),
     }
 }
 
