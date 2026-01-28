@@ -408,8 +408,8 @@ def extract_text_from_id(id_image, id_type: Optional[str] = None) -> Dict:
         # Perform OCR
         raw_text = perform_ocr(deskewed)
         
-        if not raw_text or len(raw_text) < 20:
-            raise DataExtractionError("OCR extracted insufficient text")
+        if not raw_text or len(raw_text) < 10:
+            raise DataExtractionError("OCR extracted insufficient text (minimum 10 characters required)")
         
         # Detect ID type if not provided
         if not id_type:

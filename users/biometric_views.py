@@ -1364,7 +1364,7 @@ class FaceDetectionPreviewView(APIView):
             # Check face quality
             is_valid, quality_issues = validate_face_quality(
                 request.data['image'],
-                blur_threshold=70  # More lenient threshold
+                blur_threshold=30  # Lenient threshold for mobile cameras
             )
             
             # Draw bounding box

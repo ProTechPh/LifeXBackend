@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     # Local apps
     'users',
     'blockchain',
+    'products',
 ]
 
 MIDDLEWARE = [
@@ -250,15 +251,15 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 BIOMETRIC_SETTINGS = {
     # Face Recognition
-    'FACE_MATCH_THRESHOLD': 0.6,  # 0-1, lower = stricter (for 1:1 matching with email)
-    'FACE_MATCH_THRESHOLD_1N': 0.5,  # Stricter threshold for 1:N matching (face-only login)
+    'FACE_MATCH_THRESHOLD': 0.75,  # 0-1, lower = stricter (for 1:1 matching with email) - Lenient for low quality mobile cameras
+    'FACE_MATCH_THRESHOLD_1N': 0.65,  # Stricter threshold for 1:N matching (face-only login) - Balanced
     'MIN_FACE_SIZE': (100, 100),  # Minimum face size in pixels
     'MAX_FACE_SIZE': (2000, 2000),  # Maximum face size in pixels
     
     # Image Quality Requirements
     'MIN_IMAGE_SIZE': (640, 480),  # Minimum image resolution (width, height)
     'MAX_IMAGE_SIZE': 10 * 1024 * 1024,  # Maximum file size: 10MB
-    'MIN_SHARPNESS': 100,  # Minimum Laplacian variance (blur detection)
+    'MIN_SHARPNESS': 30,  # Minimum Laplacian variance (blur detection) - Lenient for mobile cameras
     'MIN_BRIGHTNESS': 50,  # Minimum average brightness (0-255)
     'MAX_BRIGHTNESS': 200,  # Maximum average brightness (0-255)
     'ALLOWED_IMAGE_FORMATS': ['JPEG', 'PNG', 'JPG'],  # Allowed image formats

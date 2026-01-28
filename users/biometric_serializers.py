@@ -247,10 +247,10 @@ class BiometricRegistrationSerializer(serializers.Serializer):
                 f"Image file too large. Maximum size is {max_size / (1024 * 1024):.1f}MB"
             )
         
-        # Validate face quality with lenient threshold for registration (70 instead of 100)
-        # This allows users to register while still recording quality issues for security monitoring
+        # Validate face quality with lenient threshold for registration (30 instead of 100)
+        # This allows users with mobile cameras to register while maintaining basic quality
         try:
-            is_valid, issues = validate_face_quality(value, blur_threshold=70.0)
+            is_valid, issues = validate_face_quality(value, blur_threshold=30.0)
             value.seek(0)
             
             if not is_valid:
