@@ -12,6 +12,7 @@ from .views import (
 from .staff_views import (
     DepartmentListView,
     DoctorByDepartmentListView,
+    DoctorListView,
     DoctorScheduleListView,
     AppointmentCreateView,
     AppointmentListView,
@@ -105,6 +106,7 @@ urlpatterns = [
     # Hospital structure (Receptionist)
     path('departments/', DepartmentListView.as_view(), name='department_list'),
     path('departments/<int:dept_id>/doctors/', DoctorByDepartmentListView.as_view(), name='doctor_list_by_dept'),
+    path('staff/doctors/', DoctorListView.as_view(), name='doctor_list'),
     
     # Schedules and Appointments (Receptionist/Doctor/Patient)
     path('doctors/<int:doctor_id>/schedule/', DoctorScheduleListView.as_view(), name='doctor_schedule'),

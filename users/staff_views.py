@@ -51,6 +51,17 @@ class DoctorByDepartmentListView(generics.ListAPIView):
         return User.objects.filter(role='DOCTOR', department_id=dept_id, is_active=True)
 
 @extend_schema(
+    tags=['Hospital Structure'],
+    summary='List all doctors',
+    description='Get a list of all active doctors (Staff only)'
+)
+class DoctorListView(generics.ListAPIView):
+    """List all active doctors (For Staff)"""
+    serializer_class = UserSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    queryset = User.objects.filter(role='DOCTOR', is_active=True)
+
+@extend_schema(
     tags=['Scheduling'],
     summary='Get doctor schedule',
     description='View schedule for a specific doctor',
