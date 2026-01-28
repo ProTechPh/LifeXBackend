@@ -313,3 +313,322 @@ class NotificationStatsView(APIView):
             ).count()
         
         return Response(stats, status=status.HTTP_200_OK)
+
+
+@extend_schema(
+    tags=['Dashboard'],
+    summary='Get doctor dashboard statistics',
+    description='Get statistics for doctor dashboard including patient count, appointments, etc.'
+)
+class DoctorDashboardStatsView(APIView):
+    """Get dashboard statistics for doctors"""
+    permission_classes = [IsDoctor]
+    
+    def get(self, request):
+        from blockchain.models import MedicalRecord
+        from datetime import date
+        
+        doctor = request.user
+        
+        # Get all patients who have appointments with this doctor
+        patient_ids = Appointment.objects.filter(doctor=doctor).values_list('patient_id', flat=True).distinct()
+        total_patients = patient_ids.count()
+        
+        # Get today's appointments
+        today = date.today()
+        todays_appointments = Appointment.objects.filter(
+            doctor=doctor,
+            appointment_date=today,
+            status__in=['SCHEDULED', 'CHECKED_IN', 'IN_PROGRESS']
+        ).count()
+        
+        # Get pending medical records that need review (uploaded by this doctor but not verified)
+        pending_reviews = MedicalRecord.objects.filter(
+            uploaded_by=doctor,
+            approval_status='PENDING'
+        ).count()
+        
+        # Get recent lab results (last 7 days)
+        from datetime import timedelta
+        week_ago = today - timedelta(days=7)
+        recent_lab_results = MedicalRecord.objects.filter(
+            patient_id__in=patient_ids,
+            record_type='LAB_RESULT',
+            date_of_service__gte=week_ago
+        ).count()
+        
+        # Get upcoming appointments (next 5)
+        upcoming_appointments = Appointment.objects.filter(
+            doctor=doctor,
+            appointment_date__gte=today,
+            status__in=['SCHEDULED', 'CHECKED_IN']
+        ).order_by('appointment_date', 'appointment_time')[:5]
+        
+        upcoming_list = []
+        for apt in upcoming_appointments:
+            upcoming_list.append({
+                'id': apt.id,
+                'patient_name': apt.patient.get_full_name(),
+                'appointment_date': apt.appointment_date,
+                'appointment_time': apt.appointment_time,
+                'reason': apt.reason,
+                'status': apt.status
+            })
+        
+        stats = {
+            'total_patients': total_patients,
+            'todays_appointments': todays_appointments,
+            'pending_reviews': pending_reviews,
+            'recent_lab_results': recent_lab_results,
+            'upcoming_appointments': upcoming_list
+        }
+        
+        return Response(stats, status=status.HTTP_200_OK)
+
+
+@extend_schema(
+    tags=['Dashboard'],
+    summary='Get admin system statistics',
+    description='Get comprehensive system statistics for admin dashboard'
+)
+class AdminSystemStatsView(APIView):
+    """Get system statistics for admin dashboard"""
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get(self, request):
+        from blockchain.models import MedicalRecord, BlockchainTransaction
+        from datetime import date, timedelta
+        
+        # User statistics
+        total_users = User.objects.count()
+        active_users = User.objects.filter(is_active=True).count()
+        total_patients = User.objects.filter(role='PATIENT').count()
+        total_staff = User.objects.filter(role__in=['DOCTOR', 'NURSE', 'RECEPTIONIST', 'ADMIN']).count()
+        total_doctors = User.objects.filter(role='DOCTOR').count()
+        total_nurses = User.objects.filter(role='NURSE').count()
+        total_receptionists = User.objects.filter(role='RECEPTIONIST').count()
+        
+        # Medical records statistics
+        total_medical_records = MedicalRecord.objects.count()
+        verified_records = MedicalRecord.objects.filter(is_verified=True).count()
+        
+        # Appointment statistics
+        total_appointments = Appointment.objects.count()
+        today = date.today()
+        todays_appointments = Appointment.objects.filter(appointment_date=today).count()
+        
+        # Blockchain statistics
+        total_blockchain_transactions = BlockchainTransaction.objects.count()
+        successful_transactions = BlockchainTransaction.objects.filter(status='SUCCESS').count()
+        failed_transactions = BlockchainTransaction.objects.filter(status='FAILED').count()
+        
+        # Recent activities (last 10)
+        recent_activities = []
+        
+        # Get recent user registrations
+        recent_users = User.objects.filter(
+            date_joined__gte=timezone.now() - timedelta(days=7)
+        ).order_by('-date_joined')[:5]
+        
+        for user in recent_users:
+            time_diff = timezone.now() - user.date_joined
+            if time_diff.days > 0:
+                time_ago = f"{time_diff.days} day{'s' if time_diff.days > 1 else ''} ago"
+            elif time_diff.seconds // 3600 > 0:
+                hours = time_diff.seconds // 3600
+                time_ago = f"{hours} hour{'s' if hours > 1 else ''} ago"
+            else:
+                minutes = time_diff.seconds // 60
+                time_ago = f"{minutes} minute{'s' if minutes > 1 else ''} ago"
+            
+            recent_activities.append({
+                'type': 'user_registration',
+                'icon': 'Users',
+                'message': f"New user registered: {user.get_full_name()} ({user.role})",
+                'time': time_ago,
+                'timestamp': user.date_joined.isoformat()
+            })
+        
+        # Get recent appointments
+        recent_appointments = Appointment.objects.filter(
+            created_at__gte=timezone.now() - timedelta(days=1)
+        ).order_by('-created_at')[:3]
+        
+        for apt in recent_appointments:
+            time_diff = timezone.now() - apt.created_at
+            if time_diff.seconds // 3600 > 0:
+                hours = time_diff.seconds // 3600
+                time_ago = f"{hours} hour{'s' if hours > 1 else ''} ago"
+            else:
+                minutes = time_diff.seconds // 60
+                time_ago = f"{minutes} minute{'s' if minutes > 1 else ''} ago"
+            
+            recent_activities.append({
+                'type': 'appointment',
+                'icon': 'Calendar',
+                'message': f"New appointment: {apt.patient.get_full_name()} with Dr. {apt.doctor.get_full_name()}",
+                'time': time_ago,
+                'timestamp': apt.created_at.isoformat()
+            })
+        
+        # Sort activities by timestamp
+        recent_activities.sort(key=lambda x: x['timestamp'], reverse=True)
+        recent_activities = recent_activities[:10]
+        
+        stats = {
+            'total_users': total_users,
+            'active_users': active_users,
+            'total_patients': total_patients,
+            'total_staff': total_staff,
+            'total_doctors': total_doctors,
+            'total_nurses': total_nurses,
+            'total_receptionists': total_receptionists,
+            'total_medical_records': total_medical_records,
+            'verified_records': verified_records,
+            'total_appointments': total_appointments,
+            'todays_appointments': todays_appointments,
+            'total_blockchain_transactions': total_blockchain_transactions,
+            'successful_transactions': successful_transactions,
+            'failed_transactions': failed_transactions,
+            'recent_activities': recent_activities,
+            'system_health': 'Good' if failed_transactions == 0 else 'Degraded'
+        }
+        
+        return Response(stats, status=status.HTTP_200_OK)
+
+
+@extend_schema(
+    tags=['Dashboard'],
+    summary='Get nurse dashboard statistics',
+    description='Get statistics for nurse dashboard including records uploaded, pending approvals, etc.'
+)
+class NurseDashboardStatsView(APIView):
+    """Get dashboard statistics for nurses"""
+    permission_classes = [IsNurse]
+    
+    def get(self, request):
+        from blockchain.models import MedicalRecord
+        from datetime import date, timedelta
+        
+        nurse = request.user
+        today = date.today()
+        
+        # Get records uploaded today by this nurse
+        records_uploaded_today = MedicalRecord.objects.filter(
+            uploaded_by=nurse,
+            created_at__date=today
+        ).count()
+        
+        # Get pending approvals (records that need approval)
+        pending_approvals = MedicalRecord.objects.filter(
+            approval_status='PENDING'
+        ).count()
+        
+        # Get patients assigned to this nurse (through doctor assignments)
+        from .models import DoctorNurseAssignment
+        assigned_doctors = DoctorNurseAssignment.objects.filter(
+            nurse=nurse
+        ).values_list('doctor_id', flat=True)
+        
+        # Get unique patients who have appointments with assigned doctors
+        patients_assigned = Appointment.objects.filter(
+            doctor_id__in=assigned_doctors
+        ).values_list('patient_id', flat=True).distinct().count()
+        
+        # Get total records processed by this nurse (this month)
+        month_start = today.replace(day=1)
+        records_processed = MedicalRecord.objects.filter(
+            uploaded_by=nurse,
+            created_at__gte=month_start
+        ).count()
+        
+        # Get pending records for approval
+        pending_records_list = MedicalRecord.objects.filter(
+            approval_status='PENDING'
+        ).select_related('patient', 'uploaded_by').order_by('-created_at')[:10]
+        
+        pending_records = []
+        for record in pending_records_list:
+            pending_records.append({
+                'id': record.id,
+                'patient_name': record.patient.get_full_name(),
+                'record_type': record.record_type,
+                'uploaded_by': record.uploaded_by.get_full_name() if record.uploaded_by else 'External',
+                'upload_date': record.created_at.isoformat(),
+                'status': record.approval_status.lower()
+            })
+        
+        stats = {
+            'records_uploaded_today': records_uploaded_today,
+            'pending_approvals': pending_approvals,
+            'patients_assigned': patients_assigned,
+            'records_processed': records_processed,
+            'pending_records': pending_records
+        }
+        
+        return Response(stats, status=status.HTTP_200_OK)
+
+
+@extend_schema(
+    tags=['Dashboard'],
+    summary='Get receptionist dashboard statistics',
+    description='Get statistics for receptionist dashboard including registrations, appointments, etc.'
+)
+class ReceptionistDashboardStatsView(APIView):
+    """Get dashboard statistics for receptionists"""
+    permission_classes = [IsReceptionist]
+    
+    def get(self, request):
+        from datetime import date
+        
+        today = date.today()
+        
+        # Get patients registered today
+        patients_registered_today = User.objects.filter(
+            role='PATIENT',
+            date_joined__date=today
+        ).count()
+        
+        # Get appointments scheduled for today
+        appointments_scheduled = Appointment.objects.filter(
+            appointment_date=today
+        ).count()
+        
+        # Get pending appointments (scheduled but not checked in)
+        pending_appointments = Appointment.objects.filter(
+            appointment_date=today,
+            status='SCHEDULED'
+        ).count()
+        
+        # Get checked-in patients today
+        checked_in_patients = Appointment.objects.filter(
+            appointment_date=today,
+            status__in=['CHECKED_IN', 'IN_PROGRESS']
+        ).count()
+        
+        # Get today's appointments with details
+        todays_appointments = Appointment.objects.filter(
+            appointment_date=today
+        ).select_related('patient', 'doctor').order_by('appointment_time')[:10]
+        
+        appointments_list = []
+        for apt in todays_appointments:
+            appointments_list.append({
+                'id': apt.id,
+                'patient_name': apt.patient.get_full_name(),
+                'doctor_name': apt.doctor.get_full_name(),
+                'appointment_time': apt.appointment_time.strftime('%H:%M'),
+                'appointment_type': apt.appointment_type,
+                'status': apt.status,
+                'reason': apt.reason
+            })
+        
+        stats = {
+            'patients_registered_today': patients_registered_today,
+            'appointments_scheduled': appointments_scheduled,
+            'pending_appointments': pending_appointments,
+            'checked_in_patients': checked_in_patients,
+            'todays_appointments': appointments_list
+        }
+        
+        return Response(stats, status=status.HTTP_200_OK)

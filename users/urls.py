@@ -24,6 +24,10 @@ from .staff_views import (
     NotificationMarkAllReadView,
     NotificationDeleteView,
     NotificationStatsView,
+    DoctorDashboardStatsView,
+    AdminSystemStatsView,
+    NurseDashboardStatsView,
+    ReceptionistDashboardStatsView,
 )
 from .biometric_views import (
     BiometricRegistrationView,
@@ -117,4 +121,10 @@ urlpatterns = [
     path('notifications/mark-all-read/', NotificationMarkAllReadView.as_view(), name='notification_mark_all_read'),
     path('notifications/<int:notification_id>/read/', NotificationMarkReadView.as_view(), name='notification_read'),
     path('notifications/<int:notification_id>/', NotificationDeleteView.as_view(), name='notification_delete'),
+    
+    # Dashboard Statistics
+    path('dashboard/doctor-stats/', DoctorDashboardStatsView.as_view(), name='doctor_dashboard_stats'),
+    path('dashboard/system-stats/', AdminSystemStatsView.as_view(), name='admin_system_stats'),
+    path('dashboard/nurse-stats/', NurseDashboardStatsView.as_view(), name='nurse_dashboard_stats'),
+    path('dashboard/receptionist-stats/', ReceptionistDashboardStatsView.as_view(), name='receptionist_dashboard_stats'),
 ]
